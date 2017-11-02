@@ -17,15 +17,47 @@ public class Cp2102SerialDriver extends CommonUsbSerialDriver {
     private static final int DEFAULT_BAUD_RATE = 9600;
     
     private static final int USB_WRITE_TIMEOUT_MILLIS = 5000;
+
+    private static final int REQTYPE_HOST_TO_INTERFACE  = 0x41;
+    private static final int REQTYPE_INTERFACE_TO_HOST  = 0xc1;
+    private static final int REQTYPE_HOST_TO_DEVICE     = 0x40;
+    private static final int REQTYPE_DEVICE_TO_HOST     = 0xc0;
     
     /*
      * Configuration Request Types
      */
-    private static final int REQTYPE_HOST_TO_DEVICE = 0x41;
+//    private static final int REQTYPE_HOST_TO_DEVICE = 0x41;
     
     /*
      * Configuration Request Codes
      */
+    private static final int CP210X_IFC_ENABLE      = 0x00;
+    private static final int CP210X_SET_BAUDDIV     = 0x01;
+    private static final int CP210X_GET_BAUDDIV     = 0x02;
+    private static final int CP210X_SET_LINE_CTL    = 0x03;
+    private static final int CP210X_GET_LINE_CTL    = 0x04;
+    private static final int CP210X_SET_BREAK       = 0x05;
+    private static final int CP210X_IMM_CHAR        = 0x06;
+    private static final int CP210X_SET_MHS         = 0x07;
+    private static final int CP210X_GET_MDMSTS      = 0x08;
+    private static final int CP210X_SET_XON         = 0x09;
+    private static final int CP210X_SET_XOFF        = 0x0A;
+    private static final int CP210X_SET_EVENTMASK   = 0x0B;
+    private static final int CP210X_GET_EVENTMASK   = 0x0C;
+    private static final int CP210X_SET_CHAR        = 0x0D;
+    private static final int CP210X_GET_CHARS       = 0x0E;
+    private static final int CP210X_GET_PROPS       = 0x0F;
+    private static final int CP210X_GET_COMM_STATUS = 0x10;
+    private static final int CP210X_RESET           = 0x11;
+    private static final int CP210X_PURGE           = 0x12;
+    private static final int CP210X_SET_FLOW        = 0x13;
+    private static final int CP210X_GET_FLOW        = 0x14;
+    private static final int CP210X_EMBED_EVENTS    = 0x15;
+    private static final int CP210X_GET_EVENTSTATE  = 0x16;
+    private static final int CP210X_SET_CHARS       = 0x19;
+    private static final int CP210X_GET_BAUDRATE    = 0x1D;
+    private static final int CP210X_SET_BAUDRATE    = 0x1E;
+
     private static final int SILABSER_IFC_ENABLE_REQUEST_CODE = 0x00;
     private static final int SILABSER_SET_BAUDDIV_REQUEST_CODE = 0x01;
     private static final int SILABSER_SET_LINE_CTL_REQUEST_CODE = 0x03;
@@ -41,11 +73,7 @@ public class Cp2102SerialDriver extends CommonUsbSerialDriver {
      */
     private static final int UART_ENABLE = 0x0001;
     private static final int UART_DISABLE = 0x0000;
-    
-    /*
-     * SILABSER_SET_BAUDDIV_REQUEST_CODE
-     */
-    private static final int BAUD_RATE_GEN_FREQ = 0x384000;
+
     
     /*
      * SILABSER_SET_MHS_REQUEST_CODE
@@ -53,9 +81,44 @@ public class Cp2102SerialDriver extends CommonUsbSerialDriver {
     private static final int MCR_DTR = 0x0001;
     private static final int MCR_RTS = 0x0002;
     private static final int MCR_ALL = 0x0003;
-    
-    private static final int CONTROL_WRITE_DTR = 0x0100;
-    private static final int CONTROL_WRITE_RTS = 0x0200;    
+
+
+    /* CP210X_(SET|GET)_BAUDDIV */
+    private static final int BAUD_RATE_GEN_FREQ     = 0x384000;
+
+    /* CP210X_(SET|GET)_LINE_CTL */
+    private static final int BITS_DATA_MASK     = 0X0f00;
+    private static final int BITS_DATA_5        = 0X0500;
+    private static final int BITS_DATA_6        = 0X0600;
+    private static final int BITS_DATA_7        = 0X0700;
+    private static final int BITS_DATA_8        = 0X0800;
+    private static final int BITS_DATA_9        = 0X0900;
+
+    private static final int BITS_PARITY_MASK   = 0x00f0;
+    private static final int BITS_PARITY_NONE   = 0x0000;
+    private static final int BITS_PARITY_ODD    = 0x0010;
+    private static final int BITS_PARITY_EVEN   = 0x0020;
+    private static final int BITS_PARITY_MARK   = 0x0030;
+    private static final int BITS_PARITY_SPACE  = 0x0040;
+
+    private static final int BITS_STOP_MASK     = 0x000f;
+    private static final int BITS_STOP_1        = 0x0000;
+    private static final int BITS_STOP_1_5      = 0x0001;
+    private static final int BITS_STOP_2        = 0x0002;
+
+    /* CP210X_SET_BREAK */
+    private static final int BREAK_ON           = 0x0001;
+    private static final int BREAK_OFF          = 0x0000;
+
+    /* CP210X_(SET_MHS|GET_MDMSTS) */
+    private static final int CONTROL_DTR        = 0x0001;
+    private static final int CONTROL_RTS        = 0x0002;
+    private static final int CONTROL_CTS        = 0x0010;
+    private static final int CONTROL_DSR        = 0x0020;
+    private static final int CONTROL_RING       = 0x0040;
+    private static final int CONTROL_DCD        = 0x0080;
+    private static final int CONTROL_WRITE_DTR  = 0x0100;
+    private static final int CONTROL_WRITE_RTS  = 0x0200;
 
     private UsbEndpoint mReadEndpoint;
     private UsbEndpoint mWriteEndpoint; 
@@ -65,7 +128,7 @@ public class Cp2102SerialDriver extends CommonUsbSerialDriver {
     }
     
     private int setConfigSingle(int request, int value) {
-        return mConnection.controlTransfer(REQTYPE_HOST_TO_DEVICE, request, value, 
+        return mConnection.controlTransfer(REQTYPE_INTERFACE_TO_HOST, request, value,
                 0, null, 0, USB_WRITE_TIMEOUT_MILLIS);
     }
 
@@ -173,9 +236,9 @@ public class Cp2102SerialDriver extends CommonUsbSerialDriver {
                 (byte) ((baudRate >> 24) & 0xff)
         };
 //        length为4时，出错但不退出。设置大于4则退出。
-        int ret = mConnection.controlTransfer(REQTYPE_HOST_TO_DEVICE, SILABSER_SET_BAUDRATE, 
+        int ret = mConnection.controlTransfer(REQTYPE_INTERFACE_TO_HOST, SILABSER_SET_BAUDRATE,
                 0, 0, data, 4, USB_WRITE_TIMEOUT_MILLIS);
-//        int value=   mConnection.controlTransfer(0x21, 0x03, 0x001A, 0, null, 0, 0);
+        int value=   mConnection.controlTransfer(0x21, 0x03, 0x001A, 0, null, 0, 0);
         if (ret < 0) {
             throw new IOException("Error setting baud rate.");
         }

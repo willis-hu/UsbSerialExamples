@@ -1,4 +1,4 @@
-#Thu Nov 02 15:39:11 CST 2017
+#Thu Nov 02 19:49:17 CST 2017
 base.0=C\:\\Users\\HuQigen\\AndroidStudioProjects\\UsbSerialExamples\\usbSerialExamples\\build\\intermediates\\transforms\\dexMerger\\debug\\1
 renamed.0=classes.dex
 file.0=C\:\\Users\\HuQigen\\AndroidStudioProjects\\UsbSerialExamples\\usbSerialExamples\\build\\intermediates\\transforms\\dexMerger\\debug\\1\\classes.dex

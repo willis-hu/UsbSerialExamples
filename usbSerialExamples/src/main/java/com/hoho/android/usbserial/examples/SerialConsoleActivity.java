@@ -110,6 +110,21 @@ public class SerialConsoleActivity extends Activity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        stopIoManager();
+        if (sDriver != null) {
+            try {
+                sDriver.close();
+            } catch (IOException e) {
+                // Ignore.
+            }
+            sDriver = null;
+        }
+        finish();
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         Log.d(TAG, "Resumed, sDriver=" + sDriver);

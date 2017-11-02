@@ -171,6 +171,12 @@ public class DeviceListActivity extends Activity {
         mHandler.removeMessages(MESSAGE_REFRESH);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mHandler.removeMessages(MESSAGE_REFRESH);
+    }
+
     @SuppressLint("StaticFieldLeak")
     private void refreshDeviceList() {
         showProgressBar();
