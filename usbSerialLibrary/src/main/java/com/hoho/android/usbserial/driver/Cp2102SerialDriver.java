@@ -10,9 +10,10 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.util.Log;
+import android.widget.Toast;
 
 public class Cp2102SerialDriver extends CommonUsbSerialDriver {
-    private static final String TAG = Cp2102SerialDriver.class.getSimpleName();
+    private static final String TAG = "Cp2102SerialDriver";
     
     private static final int DEFAULT_BAUD_RATE = 9600;
     
@@ -229,18 +230,71 @@ public class Cp2102SerialDriver extends CommonUsbSerialDriver {
     }
 
     private void setBaudRate(int baudRate) throws IOException {   
-        byte[] data = new byte[] {
+        final byte[] data = new byte[] {
                 (byte) ( baudRate & 0xff),
                 (byte) ((baudRate >> 8 ) & 0xff),
                 (byte) ((baudRate >> 16) & 0xff),
                 (byte) ((baudRate >> 24) & 0xff)
         };
 //        length为4时，出错但不退出。设置大于4则退出。
-        int ret = mConnection.controlTransfer(REQTYPE_INTERFACE_TO_HOST, SILABSER_SET_BAUDRATE,
+        int ret = mConnection.controlTransfer(REQTYPE_HOST_TO_INTERFACE, SILABSER_SET_BAUDRATE,
                 0, 0, data, 4, USB_WRITE_TIMEOUT_MILLIS);
-        int value=   mConnection.controlTransfer(0x21, 0x03, 0x001A, 0, null, 0, 0);
+        /*int ret1 = mConnection.controlTransfer(0x41, 0x1E, 0x0000, 0x0, data, data.length, 100);
+        int ret2 = mConnection.controlTransfer(0x41, 0x03, 0x0800, 0x0, null, 0, 100);
+        int ret3 = mConnection.controlTransfer(0x41, 0x07, 0x0200, 0x0, null, 0, 100);
+        int ret4 = mConnection.controlTransfer(0x41, 0x07, 0x0101, 0x0, null, 0, 100);
+        int ret5 = mConnection.controlTransfer(0x41, 0x05, 0x0000, 0x0, null, 0, 100);
+        int ret6 = mConnection.controlTransfer(0x41, 0x00, 0x0001, 0x0, null, 0, 100);
+        int ret7 = mConnection.controlTransfer(0x41, 0x19, 0x0000, 0x0, new byte[] {0x04, 0x00, 0x00, 0x0A, 0x00, 0x00}, 6, 100);
+        int ret8 = mConnection.controlTransfer(0x41, 0x13, 0x0000, 0x0, new byte[] {0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, 16, 100);
+       */ //尝试使用git上的controlTransfer参数
+        /*int i=0;
+        while(i<256&&ret<0){
+            ret =mConnection.controlTransfer(REQTYPE_DEVICE_TO_HOST, i,
+                    0, 0, data, 4, USB_WRITE_TIMEOUT_MILLIS);
+            Log.i(TAG,"i= "+i+",ret= "+ret);
+            i++;
+        }*/
+//        对request进行累加计算，从0-256，结果始终为-1。
+        /*Log.i(TAG, "at first ret = " + ret);
+//        对requestType递增求解
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                int i=0;
+                int j=0;
+                int k=0;
+                int ret =-1;
+                while(j<256&&ret<0) {
+                    i=0;
+                    while (i < 256 && (ret = mConnection.controlTransfer(i, j,
+                            0, 0, data, 4, USB_WRITE_TIMEOUT_MILLIS)) < 0) {
+                        i++;
+                        k++;
+                        Log.i(TAG, "i="+i+"j="+j+String.valueOf(ret));
+                    }
+//        int value=   mConnection.controlTransfer(0x21, 0x03, 0x001A, 0, null, 0, 0);
+                    j++;
+                }
+                if (ret < 0) {
+                    Log.i(TAG, "k= "+k+"error setting baudrate");
+                    try {
+                        throw new IOException("Error setting baud rate.");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }else {
+                    Log.i(TAG, "i= " + i + ",j= " + j+",ret="+ret);
+                }
+            }
+        };
+        Thread countThread = new Thread(runnable);
+        countThread.start();*/
         if (ret < 0) {
+            Log.i(TAG, "error setting baudrate");
             throw new IOException("Error setting baud rate.");
+        }else {
+//            Log.i(TAG, "i= " + i + "j= " + j);
         }
     }
 

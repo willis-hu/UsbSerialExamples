@@ -61,7 +61,6 @@ public class DeviceListActivity extends Activity {
     private final static String ACTION_USB_PERMISSION = "com.example.huqigen.USB_PERMISSION";
 
     private UsbManager mUsbManager;
-    private ListView mListView;
     private TextView mProgressBarTitle;
     private ProgressBar mProgressBar;
     private PendingIntent mPendingIntent;
@@ -69,6 +68,7 @@ public class DeviceListActivity extends Activity {
     private static final int MESSAGE_REFRESH = 101;
     private static final long REFRESH_TIMEOUT_MILLIS = 5000;
 
+    @SuppressLint("HandlerLeak")
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -87,8 +87,8 @@ public class DeviceListActivity extends Activity {
 
     /** Simple container for a UsbDevice and its driver. */
     private static class DeviceEntry {
-        public UsbDevice device;
-        public UsbSerialDriver driver;
+        UsbDevice device;
+        UsbSerialDriver driver;
 
         DeviceEntry(UsbDevice device, UsbSerialDriver driver) {
             this.device = device;
@@ -105,7 +105,7 @@ public class DeviceListActivity extends Activity {
         setContentView(R.layout.main);
 
         mUsbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
-        mListView = (ListView) findViewById(R.id.deviceList);
+        ListView mListView = (ListView) findViewById(R.id.deviceList);
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mProgressBarTitle = (TextView) findViewById(R.id.progressBarTitle);
         mPendingIntent = PendingIntent.getBroadcast(DeviceListActivity.this,0,new Intent(ACTION_USB_PERMISSION),0);
@@ -117,6 +117,7 @@ public class DeviceListActivity extends Activity {
                 if (convertView == null){
                     final LayoutInflater inflater =
                             (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    assert inflater != null;
                     row = (TwoLineListItem) inflater.inflate(android.R.layout.simple_list_item_2, null);
                 } else {
                     row = (TwoLineListItem) convertView;
@@ -213,7 +214,7 @@ public class DeviceListActivity extends Activity {
                 mEntries.addAll(result);
                 mAdapter.notifyDataSetChanged();
                 mProgressBarTitle.setText(
-                        String.format("%s device(s) found",Integer.valueOf(mEntries.size())));
+                        String.format("%s device(s) found", mEntries.size()));
                 hideProgressBar();
                 Log.d(TAG, "Done refreshing, " + mEntries.size() + " entries found.");
             }
